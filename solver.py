@@ -20,13 +20,16 @@ class Sudoku:
         """
         Display puzzle in a readable format.
         """
-        puzzle = self.unsolved_puzzle
-        for row in puzzle:
-            for col in row:
-                for item in col:
-                    print(f"  {item}  ", end="")
-                print(f"|", end="")
-            print(f"\n")
+        for r in range(len(self.puzzle)): # loop over rows
+            if r in [3, 6]:
+                sep_str = "-" * 9 + "+"
+                full_str = sep_str * 3
+                print(full_str[:-1])
+            for c in range(len(self.puzzle)): # assumes sudoku is square
+                if c in [3, 6]:
+                    print("|", end="")
+                print(f" {self.puzzle[r][c]} ", end="")
+            print("\n")
 
 def read_sudoku_puzzle(puzzle_file : str) -> Sudoku:
     """
