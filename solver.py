@@ -1,4 +1,5 @@
 import os
+import copy
 
 """
 [
@@ -12,29 +13,51 @@ import os
 PUZZLE_FILE = "puzzle.txt"
 CHUNK_SIZE = 3
 
+class PotentialList:
+    def __init__(self):
+        self.valid_nums = [i for i in range (1, 10)]
+
+    def remove_invalid(self, num):
+        self.valid_nums.remove(num)
+
+
 class Sudoku:
     def __init__(self, puzzle_matrix : list):
-        self.unsolved_puzzle = puzzle_matrix
-        self.puzzle = puzzle_matrix
+        self._unsolved_puzzle = puzzle_matrix
+        self.puzzle = copy.deepcopy(puzzle_matrix)
 
-    def pretty_print(self):
+    def generate_valid_entries(self):
+        combined = []
+        for r in range(len(self.puzzle)):
+            row = []
+            for c in range(len(self.puzzle)):
+                row.append([self.puzzle[r][c], PotentialList()])
+            print(row)
+            combined.append(row)
+        
+        self.puzzle = combined
+
+    def pretty_print(self, puzzle):
         """
         Display puzzle in a readable format.
         """
-        for r in range(len(self.puzzle)): # loop over rows
+        for r in range(len(puzzle)): # loop over rows
             if r in [3, 6]:
                 sep_str = "-" * 9 + "+"
                 full_str = sep_str * 3
                 print(full_str[:-1])
-            for c in range(len(self.puzzle)): # assumes sudoku is square
+            for c in range(len(puzzle)): # assumes sudoku is square
                 if c in [3, 6]:
                     print("|", end="")
 
-                output = self.puzzle[r][c]
+                output = puzzle[r][c]
                 if output == 0:
                     output = "-"
                 print(f" {output} ", end="")
             print("\n")
+
+    def get_unsolved_puzzle(self):
+        return self._unsolved_puzzle
     
     def find_empty(self):
         for r in range(len(self.puzzle)):
@@ -48,7 +71,7 @@ class Sudoku:
         """
         Check value is a valid option for cell.
         """
-        puzzle = self.unsolved_puzzle
+        puzzle = self.puzzle
         puzzle_size = len(puzzle)
 
         # check value is valid for row
@@ -70,7 +93,10 @@ class Sudoku:
                     return 0
         
         return 1
-
+    
+    def reset_puzzle(self):
+        original = self.get_unsolved_puzzle()
+        self.puzzle = copy.deepcopy(original)
 
 def solve_sudoku(puzzle, r=0, c=0):
     r, c = puzzle.find_empty()
@@ -106,10 +132,16 @@ def read_sudoku_puzzle(puzzle_file : str) -> Sudoku:
 
 def main() -> None:
     sudoku_puzzle = read_sudoku_puzzle(PUZZLE_FILE)
-    sudoku_puzzle.pretty_print()
+    original = sudoku_puzzle.get_unsolved_puzzle()
+    sudoku_puzzle.pretty_print(original)
 
     solve_sudoku(sudoku_puzzle)
-    sudoku_puzzle.pretty_print()
+    sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
+
+    sudoku_puzzle.reset_puzzle()
+    sudoku_puzzle.generate_valid_entries()
+
+    
 
 if __name__ == "__main__":
     main()
