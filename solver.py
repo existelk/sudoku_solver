@@ -26,16 +26,8 @@ class Sudoku:
         self._unsolved_puzzle = puzzle_matrix
         self.puzzle = copy.deepcopy(puzzle_matrix)
 
-    def generate_valid_entries(self):
-        combined = []
-        for r in range(len(self.puzzle)):
-            row = []
-            for c in range(len(self.puzzle)):
-                row.append([self.puzzle[r][c], PotentialList()])
-            print(row)
-            combined.append(row)
-        
-        self.puzzle = combined
+        self.size = len(puzzle_matrix)
+        self.cell_options = [[PotentialList() for _ in range(self.size)] for _ in range(self.size)]
 
     def pretty_print(self, puzzle):
         """
@@ -60,8 +52,8 @@ class Sudoku:
         return self._unsolved_puzzle
     
     def find_empty(self):
-        for r in range(len(self.puzzle)):
-            for c in range(len(self.puzzle)):
+        for r in range(self.size):
+            for c in range(self.size):
                 if (self.puzzle[r][c] == 0):
                     return r,c
                 
@@ -97,6 +89,12 @@ class Sudoku:
     def reset_puzzle(self):
         original = self.get_unsolved_puzzle()
         self.puzzle = copy.deepcopy(original)
+
+    def update_valid_entries(self):
+        for r in range(self.size):
+            for c in range(self.size):
+                options = self.cell_options[r][c]
+                options.valid_nums = [value for value in options.valid_nums if self.check_valid_entry(value, r, c)]
 
 def solve_sudoku(puzzle, r=0, c=0):
     r, c = puzzle.find_empty()
@@ -139,9 +137,8 @@ def main() -> None:
     sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
 
     sudoku_puzzle.reset_puzzle()
-    sudoku_puzzle.generate_valid_entries()
+    sudoku_puzzle.update_valid_entries()
 
-    
 
 if __name__ == "__main__":
     main()
