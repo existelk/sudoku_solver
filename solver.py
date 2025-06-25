@@ -1,5 +1,6 @@
 import os
 import copy
+import time
 
 """
 [
@@ -17,19 +18,21 @@ class PotentialList:
     def __init__(self):
         self.valid_nums = [i for i in range (1, 10)]
 
-    def remove_invalid(self, num):
+    def remove_invalid(self, num) -> None:
         self.valid_nums.remove(num)
 
 
 class Sudoku:
-    def __init__(self, puzzle_matrix : list):
+    def __init__(self, puzzle_matrix : list, start : float, end : float = None):
         self._unsolved_puzzle = puzzle_matrix
         self.puzzle = copy.deepcopy(puzzle_matrix)
+        self.puzzle_start = start
+        self.puzzle_end = end
 
         self.size = len(puzzle_matrix)
         self.cell_options = [[PotentialList() for _ in range(self.size)] for _ in range(self.size)]
 
-    def pretty_print(self, puzzle):
+    def pretty_print(self, puzzle : list) -> None:
         """
         Display puzzle in a readable format.
         """
@@ -59,7 +62,7 @@ class Sudoku:
                 
         return -1,-1
     
-    def check_valid_entry(self, value : str, row : int, col : int):
+    def check_valid_entry(self, value : str, row : int, col : int) -> int:
         """
         Check value is a valid option for cell.
         """
@@ -86,17 +89,17 @@ class Sudoku:
         
         return 1
     
-    def reset_puzzle(self):
+    def reset_puzzle(self) -> None:
         original = self.get_unsolved_puzzle()
         self.puzzle = copy.deepcopy(original)
 
-    def update_valid_entries(self):
+    def update_valid_entries(self) -> None:
         for r in range(self.size):
             for c in range(self.size):
                 options = self.cell_options[r][c]
                 options.valid_nums = [value for value in options.valid_nums if self.check_valid_entry(value, r, c)]
 
-def solve_sudoku(puzzle, r=0, c=0):
+def solve_sudoku(puzzle : list, r : int = 0, c : int = 0) -> bool:
     r, c = puzzle.find_empty()
     if r == -1:
         return True
@@ -134,7 +137,6 @@ def main() -> None:
     sudoku_puzzle.pretty_print(original)
 
     solve_sudoku(sudoku_puzzle)
-    sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
 
     sudoku_puzzle.reset_puzzle()
     sudoku_puzzle.update_valid_entries()
