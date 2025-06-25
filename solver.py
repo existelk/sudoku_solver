@@ -23,11 +23,11 @@ class PotentialList:
 
 
 class Sudoku:
-    def __init__(self, puzzle_matrix : list, start : float, end : float = None):
+    def __init__(self, puzzle_matrix : list, start : float = None, end : float = None):
         self._unsolved_puzzle = puzzle_matrix
         self.puzzle = copy.deepcopy(puzzle_matrix)
-        self.puzzle_start = start
-        self.puzzle_end = end
+        self._puzzle_start = start
+        self._puzzle_end = end
 
         self.size = len(puzzle_matrix)
         self.cell_options = [[PotentialList() for _ in range(self.size)] for _ in range(self.size)]
@@ -53,6 +53,15 @@ class Sudoku:
 
     def get_unsolved_puzzle(self):
         return self._unsolved_puzzle
+
+    def set_start_time(self, start : float) -> None:
+        self._start = start
+
+    def set_end_time(self, end : float) -> None:
+        self._end = end
+    
+    def determine_calculation_time(self) -> float:
+        return (self._end - self._start)
     
     def find_empty(self):
         for r in range(self.size):
@@ -92,6 +101,10 @@ class Sudoku:
     def reset_puzzle(self) -> None:
         original = self.get_unsolved_puzzle()
         self.puzzle = copy.deepcopy(original)
+
+        # reset timings as well
+        self.set_start_time(0)
+        self.set_end_time(0)
 
     def update_valid_entries(self) -> None:
         for r in range(self.size):
@@ -133,10 +146,18 @@ def read_sudoku_puzzle(puzzle_file : str) -> Sudoku:
 
 def main() -> None:
     sudoku_puzzle = read_sudoku_puzzle(PUZZLE_FILE)
-    original = sudoku_puzzle.get_unsolved_puzzle()
-    sudoku_puzzle.pretty_print(original)
+
+    start = time.perf_counter()
+    sudoku_puzzle.set_start_time(start)
 
     solve_sudoku(sudoku_puzzle)
+
+    end = time.perf_counter() # using perf_countter as it provides a higher resolution time
+    sudoku_puzzle.set_end_time(end)
+    sol_length = sudoku_puzzle.determine_calculation_time()
+
+    print(f'The sudoku puzzle took {sol_length} seconds to find the solution: \n')
+    sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
 
     sudoku_puzzle.reset_puzzle()
     sudoku_puzzle.update_valid_entries()
