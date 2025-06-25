@@ -109,8 +109,15 @@ class Sudoku:
     def update_valid_entries(self) -> None:
         for r in range(self.size):
             for c in range(self.size):
-                options = self.cell_options[r][c]
-                options.valid_nums = [value for value in options.valid_nums if self.check_valid_entry(value, r, c)]
+                # only update valid_nums if the cell is empty
+                if self.puzzle[r][c] == 0:
+                    options = self.cell_options[r][c]
+                    options.valid_nums = [value for value in options.valid_nums if self.check_valid_entry(value, r, c)]
+
+                    # only one valid option so add into puzzle
+                    if len(options.valid_nums) == 1: 
+                        self.puzzle[r][c] = options.valid_nums[0]
+
 
 def solve_sudoku_original(puzzle : Sudoku, r : int = 0, c : int = 0) -> bool:
     r, c = puzzle.find_empty()
