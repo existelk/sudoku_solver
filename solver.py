@@ -23,7 +23,7 @@ class PotentialList:
 
 
 class Sudoku:
-    def __init__(self, puzzle_matrix : list, start : float = None, end : float = None):
+    def __init__(self, puzzle_matrix: list, start: float = None, end: float = None):
         self._unsolved_puzzle = puzzle_matrix
         self.puzzle = copy.deepcopy(puzzle_matrix)
         self._puzzle_start = start
@@ -32,7 +32,7 @@ class Sudoku:
         self.size = len(puzzle_matrix)
         self.cell_options = [[PotentialList() for _ in range(self.size)] for _ in range(self.size)]
 
-    def pretty_print(self, puzzle : list) -> None:
+    def pretty_print(self, puzzle: list) -> None:
         """
         Display puzzle in a readable format.
         """
@@ -54,14 +54,14 @@ class Sudoku:
     def get_unsolved_puzzle(self):
         return self._unsolved_puzzle
 
-    def set_start_time(self, start : float) -> None:
-        self._start = start
+    def set_start_time(self, start: float) -> None:
+        self._puzzle_start = start
 
-    def set_end_time(self, end : float) -> None:
-        self._end = end
+    def set_end_time(self, end: float) -> None:
+        self._puzzle_end = end
     
     def determine_calculation_time(self) -> float:
-        return (self._end - self._start)
+        return (self._puzzle_end - self._puzzle_start)
     
     def find_empty(self):
         for r in range(self.size):
@@ -71,7 +71,7 @@ class Sudoku:
                 
         return -1,-1
     
-    def check_valid_entry(self, value : str, row : int, col : int) -> int:
+    def check_valid_entry(self, value: str, row: int, col: int) -> int:
         """
         Check value is a valid option for cell.
         """
@@ -119,7 +119,7 @@ class Sudoku:
                         self.puzzle[r][c] = options.valid_nums[0]
 
 
-def solve_sudoku_original(puzzle : Sudoku, r : int = 0, c : int = 0) -> bool:
+def solve_sudoku_original(puzzle: Sudoku, r: int = 0, c: int = 0) -> bool:
     r, c = puzzle.find_empty()
     if r == -1:
         return True
@@ -134,7 +134,7 @@ def solve_sudoku_original(puzzle : Sudoku, r : int = 0, c : int = 0) -> bool:
 
     return False
 
-def improved_solve_sudoku(puzzle : Sudoku, r : int = 0, c : int = 0) -> bool:
+def improved_solve_sudoku(puzzle: Sudoku, r: int = 0, c: int = 0) -> bool:
     r, c = puzzle.find_empty()
     if r == -1:
         return True
@@ -151,7 +151,7 @@ def improved_solve_sudoku(puzzle : Sudoku, r : int = 0, c : int = 0) -> bool:
     return False
 
 
-def read_sudoku_puzzle(puzzle_file : str) -> Sudoku:
+def read_sudoku_puzzle(puzzle_file: str) -> Sudoku:
     """
     Read sudoku from input text file. 0 represents an empty space.
     """
