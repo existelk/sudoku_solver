@@ -13,7 +13,7 @@ from collections import Counter
 """
 
 # temporary globals
-PUZZLE_FILE = "puzzle.txt"
+PUZZLE_FILE = "puzzle_hard.txt"
 CHUNK_SIZE = 3
 
 class PotentialEntries:
@@ -100,7 +100,7 @@ class Sudoku:
         c_corner = (col // CHUNK_SIZE) * 3
         for x in range(r_corner, r_corner+3):
             for y in range(c_corner, c_corner+3):
-                if puzzle[x][y] == str(value):
+                if puzzle[x][y] == value:
                     return 0
         
         return 1
@@ -117,6 +117,23 @@ class Sudoku:
         self.set_start_time(0)
         self.set_end_time(0)
 
+    def remove_element_valid_nums(self, row_index: int, col_index: int, value: int) -> None:
+        """ 
+        When a new value is added to a cell, the related row, column and chunk cells valid entries lists have to be updated 
+        """
+        for r in range(self.size):
+            self.cell_options[r][col_index].remove_invalid(value)
+
+        for c in range(self.size):
+            self.cell_options[row_index][c].remove_invalid(value)
+
+        row = (row_index // CHUNK_SIZE) * 3
+        col = (col_index // CHUNK_SIZE) * 3
+        for r in range(row, row+3):
+            for c in range(col, col+3):
+                self.cell_options[r][c].remove_invalid(value)
+
+
     def update_valid_entries(self) -> None:
         for r in range(self.size):
             for c in range(self.size):
@@ -131,16 +148,6 @@ class Sudoku:
                     cell_value = options.valid_nums[0]
                     self.puzzle[r][c] = cell_value
                     self.remove_element_valid_nums(r, c, cell_value)
-    
-    def remove_element_valid_nums(self, row_index: int, col_index: int, value: int) -> None:
-        """ 
-        When a new value is added to a cell, the related row and column cells valid entries has to be updated 
-        """
-        for r in range(self.size):
-            self.cell_options[r][col_index].remove_invalid(value)
-
-        for c in range(self.size):
-            self.cell_options[row_index][c].remove_invalid(value)
 
     def row_solve_entries(self, row_index: int) -> None:
         combined_possible_entries = []
@@ -167,7 +174,9 @@ class Sudoku:
                     continue
 
                 self.puzzle[row_index][key] = elem
+                self.remove_element_valid_nums(row_index, key, elem)
                 single_entries.remove(elem)
+
                 if len(single_entries) == 0:
                     break
 
@@ -196,10 +205,45 @@ class Sudoku:
                     continue
 
                 self.puzzle[key][col_index] = elem
+                self.remove_element_valid_nums(key, col_index, elem)
                 single_entries.remove(elem)
                 if len(single_entries) == 0:
                     break
 
+    def solve_cell(self, r_corner: int, c_corner: int) -> None:
+        combined_possible_entries = []
+        history = {}
+
+        # find any empty cells in a chunk and add their cell options to combined list
+        for r in range(3):
+            for c in range(3):
+                row = r_corner + r
+                col = c_corner + c
+                if self.puzzle[row][col] != 0:
+                    continue
+                
+                options = self.cell_options[row][col]
+                combined_possible_entries += options.valid_nums
+                history[(row, col)] = options.valid_nums
+        
+        combined_possible_entries.sort()
+        counter = Counter(combined_possible_entries)
+        # if a possible value only appears for one cell in a row, it can be assigned to that cell
+        single_entries = [key for key, value in counter.items() if value == 1]
+
+        if len(single_entries) == 0:
+            return
+        
+        for key, value in history.items():
+            for elem in single_entries:
+                if elem not in value:
+                    continue
+
+                self.puzzle[key[0]][key[1]] = elem
+                self.remove_element_valid_nums(key[0], key[1], elem)
+                single_entries.remove(elem)
+                if len(single_entries) == 0:
+                    break 
 
 def solve_sudoku_original(puzzle: Sudoku, r: int = 0, c: int = 0) -> bool:
     r, c = puzzle.find_empty()
@@ -236,7 +280,6 @@ def personal_way_to_solve(sudoku : Sudoku) -> None:
     # run valid_entries twice as some cells will be solved on the first pass
     for _ in range(2):
         sudoku.update_valid_entries()
-    sudoku.pretty_print(sudoku.puzzle)
 
     # check if any rows can be solved
     for r in range(sudoku.size):
@@ -246,6 +289,12 @@ def personal_way_to_solve(sudoku : Sudoku) -> None:
     for c in range(sudoku.size):
         sudoku.col_solve_entries(c)
 
+    # iterate over chunk corners
+    for r_corner in range(0, 8, 3):
+        for c_corner in range(0, 8, 3):
+            sudoku.solve_cell(r_corner, c_corner)
+
+    improved_solve_sudoku(sudoku)
 
 def read_sudoku_puzzle(puzzle_file: str) -> Sudoku:
     """
@@ -256,7 +305,7 @@ def read_sudoku_puzzle(puzzle_file: str) -> Sudoku:
         sys.exit(1)
 
     puzzle = []
-    with open("puzzle.txt") as f:
+    with open(PUZZLE_FILE) as f:
         for line in f:
             format_line = line.rstrip().split(',')
             puzzle.append([int(format_line[i]) for i in range(len(format_line))])
@@ -266,37 +315,36 @@ def read_sudoku_puzzle(puzzle_file: str) -> Sudoku:
 def main() -> None:
     sudoku_puzzle = read_sudoku_puzzle(PUZZLE_FILE)
     sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
-    print("\n\n")
 
     # solve sudoku with standard recursion and backtracking
-    # start = time.perf_counter()
-    # sudoku_puzzle.set_start_time(start) # using perf_countter as it provides a higher resolution time
-    # solve_sudoku_original(sudoku_puzzle)
+    start = time.perf_counter()
+    sudoku_puzzle.set_start_time(start) # using perf_countter as it provides a higher resolution time
+    solve_sudoku_original(sudoku_puzzle)
 
-    # end = time.perf_counter() 
-    # sudoku_puzzle.set_end_time(end)
-    # sol_length = sudoku_puzzle.determine_calculation_time()
+    end = time.perf_counter() 
+    sudoku_puzzle.set_end_time(end)
+    sol_length = sudoku_puzzle.determine_calculation_time()
 
-    # print(f'The sudoku puzzle took {sol_length} seconds to find the solution: \n')
-    # sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
+    print(f'The sudoku puzzle took {sol_length} seconds to find the solution: \n')
+    sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
 
-    # # solve the sudoku with same method but only testing valid values in cells
-    # sudoku_puzzle.reset_puzzle()
-    # start = time.perf_counter()
-    # sudoku_puzzle.set_start_time(start)
+    # solve the sudoku with same method but only testing valid values in cells
+    sudoku_puzzle.reset_puzzle()
+    start = time.perf_counter()
+    sudoku_puzzle.set_start_time(start)
 
-    # sudoku_puzzle.update_valid_entries()
-    # improved_solve_sudoku(sudoku_puzzle)
+    sudoku_puzzle.update_valid_entries()
+    improved_solve_sudoku(sudoku_puzzle)
 
-    # end = time.perf_counter() 
-    # sudoku_puzzle.set_end_time(end)
-    # sol_length = sudoku_puzzle.determine_calculation_time()
+    end = time.perf_counter() 
+    sudoku_puzzle.set_end_time(end)
+    sol_length = sudoku_puzzle.determine_calculation_time()
     
-    # print(f'The sudoku puzzle took {sol_length} seconds to find the solution: \n')
-    # sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
+    print(f'The sudoku puzzle took {sol_length} seconds to find the solution: \n')
+    sudoku_puzzle.pretty_print(sudoku_puzzle.puzzle)
 
     # solve the sudoku my way
-    # sudoku_puzzle.reset_puzzle()
+    sudoku_puzzle.reset_puzzle()
     start = time.perf_counter()
     sudoku_puzzle.set_start_time(start)
 
