@@ -133,16 +133,19 @@ class Sudoku:
                     self.remove_element_valid_nums(r, c, cell_value)
     
     def remove_element_valid_nums(self, row_index: int, col_index: int, value: int) -> None:
-        """ When a new value is added to a cell, the related row and column cells valid entries has to be updated """
+        """ 
+        When a new value is added to a cell, the related row and column cells valid entries has to be updated 
+        """
         for r in range(self.size):
             self.cell_options[r][col_index].remove_invalid(value)
 
         for c in range(self.size):
             self.cell_options[row_index][c].remove_invalid(value)
 
-    def row_solve_entries(self, row_index: int):
+    def row_solve_entries(self, row_index: int) -> None:
         combined_possible_entries = []
         history = {}
+
         # iterate along the row
         for c in range(self.size):
             if self.puzzle[row_index][c] == 0:
@@ -164,6 +167,35 @@ class Sudoku:
                     continue
 
                 self.puzzle[row_index][key] = elem
+                single_entries.remove(elem)
+                if len(single_entries) == 0:
+                    break
+
+    def col_solve_entries(self, col_index: int) -> None:
+        combined_possible_entries = []
+        history = {}
+        
+        # iterate along the row
+        for r in range(self.size):
+            if self.puzzle[r][col_index] == 0:
+                options = self.cell_options[r][col_index]
+                combined_possible_entries += options.valid_nums
+                history[r] = options.valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
+        
+        combined_possible_entries.sort()
+        counter = Counter(combined_possible_entries)
+        # if a possible value only appears for one cell in a row, it can be assigned to that cell
+        single_entries = [key for key, value in counter.items() if value == 1]
+
+        if len(single_entries) == 0:
+            return
+        
+        for key, value in history.items():
+            for elem in single_entries:
+                if elem not in value:
+                    continue
+
+                self.puzzle[key][col_index] = elem
                 single_entries.remove(elem)
                 if len(single_entries) == 0:
                     break
@@ -211,6 +243,8 @@ def personal_way_to_solve(sudoku : Sudoku) -> None:
         sudoku.row_solve_entries(r)
 
     # check if any columns can be solved
+    for c in range(sudoku.size):
+        sudoku.col_solve_entries(c)
 
 
 def read_sudoku_puzzle(puzzle_file: str) -> Sudoku:
