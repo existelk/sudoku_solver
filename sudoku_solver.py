@@ -3,7 +3,6 @@ import os
 from solver_algorithms import *
 from sudoku_elements import Sudoku
 
-CHUNK_SIZE = 3
 
 class SudokuSolver:
     def __init__(self, filename: str, strategy: Strategy, start: float = None, end: float = None):
