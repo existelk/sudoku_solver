@@ -3,8 +3,6 @@ import os
 from solver_algorithms import *
 from sudoku_elements import Sudoku
 
-# temporary globals
-PUZZLE_FILE = "puzzle_hard.txt"
 CHUNK_SIZE = 3
 
 class SudokuSolver:
