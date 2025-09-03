@@ -40,7 +40,10 @@ class Strategy(ABC):
         return 1
     
     @abstractmethod
-    def solve(self, sudoku: Sudoku, r: int, c: int) -> bool:
+    def solve(self, sudoku: Sudoku, r: int = 0, c: int = 0) -> bool:
+        """
+        Solve the sudoku puzzle. Optionally, r and c can specify a starting cell.
+        """
         pass
 
 class RecursiveSolver(Strategy):
