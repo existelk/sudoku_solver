@@ -3,7 +3,6 @@ import os
 from solver_algorithms import *
 from sudoku_elements import Sudoku
 
-
 class SudokuSolver:
     def __init__(self, filename: str, strategy: Strategy, start: float = None, end: float = None):
         self._unsolved_puzzle = self.read_puzzle_file(filename)
@@ -26,9 +25,9 @@ class SudokuSolver:
         with open(puzzle_file, encoding="utf-8") as f:
             for line in f:
                 format_line = line.rstrip().split(',')
-                puzzle.append([int(x) for x in format_line])
                 if not any(format_line):
                     continue
+                
                 try:
                     puzzle.append([int(val) if val.strip().isdigit() else 0 for val in format_line])
                 except ValueError:
