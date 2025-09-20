@@ -111,8 +111,8 @@ class SudokuSolver:
         """
         result = self._strategy.solve(self.sudoku)
 
-        # TODO handle result - is it solved?
-
+        if not result:
+            raise ValueError("Puzzle could not be solved with the current strategy.")
 
 if __name__ == "__main__":
     sudoku = SudokuSolver("puzzle_hard.txt", RecursiveSolver())

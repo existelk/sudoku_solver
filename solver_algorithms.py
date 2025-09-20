@@ -85,11 +85,9 @@ class ImprovedRecursiveSolver(Strategy):
         
         return False
 
-# TODO: add early exit if puzzle is solved
-# TODO: add false condition if puzzle not solved at the end 
 class PersonalSolver(Strategy):
     def __init__(self):
-        self.recurive_solver = ImprovedRecursiveSolver()
+        self.recursive_solver = ImprovedRecursiveSolver()
 
     def update_valid_entries(self, sudoku: Sudoku) -> None:
         for r in range(sudoku.size):
@@ -197,24 +195,38 @@ class PersonalSolver(Strategy):
                 if not single_entries:
                     break
 
-    def solve(self, sudoku : Sudoku, r: int = 0, c: int = 0) -> None:
+    def is_solved(self, sudoku: Sudoku) -> bool:
+        size = sudoku.size
+        for r in range(size):
+            for c in range(size):
+                if sudoku.puzzle[r][c].value == 0:
+                    return False
+        return True
+
+    def solve(self, sudoku : Sudoku, r: int = 0, c: int = 0) -> bool:
+        """
+        Solve the sudoku puzzle using a combination of strategies (the way I manually solve a puzzle).
+        """
         # run valid_entries twice as some cells will be solved on the first pass
         for _ in range(2):
             self.update_valid_entries(sudoku)
+        if self.is_solved(sudoku): return True
 
         # check if any rows can be solved
         for r in range(sudoku.size):
             self.row_solve_entries(sudoku, r)
+        if self.is_solved(sudoku): return True
 
         # check if any columns can be solved
         for c in range(sudoku.size):
             self.col_solve_entries(sudoku, c)
+        if self.is_solved(sudoku): return True
 
         # iterate over chunk corners
-        for r_corner in range(0, 8, 3):
-            for c_corner in range(0, 8, 3):
+        for r_corner in range(0, sudoku.size, 3):
+            for c_corner in range(0, sudoku.size, 3):
                 self.chunk_solve_entries(sudoku, r_corner, c_corner)
+        if self.is_solved(sudoku): return True
 
-        self.recurive_solver.solve(sudoku)
-
-        return True
+        result = self.recursive_solver.solve(sudoku)
+        return result
