@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections import Counter
+from collections import Counter, defaultdict
 
 from sudoku_elements import Sudoku
 
@@ -98,64 +98,59 @@ class PersonalSolver(Strategy):
                     sudoku.remove_element_valid_nums(r, c, cell_value)
     
     def row_solve_entries(self, sudoku: Sudoku, row_index: int) -> None:
-        combined_possible_entries = []
-        history = {}
+        counter = Counter()
+        history = defaultdict(list)
 
-        # iterate along the row
+        # collect all possible entries for empty cells in the row
         for c in range(sudoku.size):
             if sudoku.puzzle[row_index][c] == 0:
-                options = sudoku.cell_options[row_index][c]
-                combined_possible_entries += options.valid_nums
-                history[c] = options.valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
+                valid_nums = sudoku.cell_options[row_index][c].valid_nums
+                counter.update(valid_nums)
+                history[c] = valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
         
-        combined_possible_entries.sort()
-        counter = Counter(combined_possible_entries)
-        # if a possible value only appears for one cell in a row, it can be assigned to that cell
-        single_entries = [key for key, value in counter.items() if value == 1]
+        single_entries = {num for num, count in counter.items() if count == 1}
 
         if len(single_entries) == 0:
             return
         
-        for key, value in history.items():
-            for elem in single_entries:
-                if elem not in value:
-                    continue
+        # if a possible value only appears for one cell in a row, it can be assigned to that cell
+        for col, valid_nums in history.items():
+            unique_nums = single_entries & set(valid_nums)
+            if unique_nums:
+                num = unique_nums.pop()
+                sudoku.puzzle[row_index][col] = num
+                sudoku.remove_element_valid_nums(row_index, col, num)
+                single_entries.remove(num)
 
-                sudoku.puzzle[row_index][key] = elem
-                sudoku.remove_element_valid_nums(row_index, key, elem)
-                single_entries.remove(elem)
-
-                if len(single_entries) == 0:
+                if not single_entries:
                     break
 
     def col_solve_entries(self, sudoku: Sudoku, col_index: int) -> None:
-        combined_possible_entries = []
-        history = {}
+        counter = Counter()
+        history = defaultdict(list)
         
         # iterate along the row
         for r in range(sudoku.size):
             if sudoku.puzzle[r][col_index] == 0:
-                options = sudoku.cell_options[r][col_index]
-                combined_possible_entries += options.valid_nums
-                history[r] = options.valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
+                valid_nums = sudoku.cell_options[r][col_index].valid_nums
+                counter.update(valid_nums)
+                history[r] = valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
         
-        combined_possible_entries.sort()
-        counter = Counter(combined_possible_entries)
-        # if a possible value only appears for one cell in a row, it can be assigned to that cell
-        single_entries = [key for key, value in counter.items() if value == 1]
+        single_entries = {num for num, count in counter.items() if count == 1}
 
         if len(single_entries) == 0:
             return
-        
-        for key, value in history.items():
-            for elem in single_entries:
-                if elem not in value:
-                    continue
 
-                sudoku.puzzle[key][col_index] = elem
-                sudoku.remove_element_valid_nums(key, col_index, elem)
-                single_entries.remove(elem)
-                if len(single_entries) == 0:
+        # if a possible value only appears for one cell in a row, it can be assigned to that cell
+        for row, valid_nums in history.items():
+            unique_nums = single_entries & set(valid_nums)
+            if unique_nums:
+                num = unique_nums.pop()
+                sudoku.puzzle[row][col_index] = num
+                sudoku.remove_element_valid_nums(row, col_index, num)
+                single_entries.remove(num)
+
+                if not single_entries:
                     break
 
     def solve_cell(self, sudoku: Sudoku, r_corner: int, c_corner: int) -> None:
