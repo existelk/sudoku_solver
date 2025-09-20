@@ -1,37 +1,40 @@
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 
-from sudoku_elements import Sudoku
+from sudoku_elements import Sudoku, Cell
 
 class Strategy(ABC):
-    def find_empty(self, puzzle: list[list[int]]) -> tuple[int, int]:
+    def find_empty(self, puzzle: list[list[Cell]]) -> tuple[int, int]:
+        """
+        Find an empty cell in the puzzle. Return row, column index or -1, -1 if no empty cells.
+        """ 
         for r in range(len(puzzle)):
-            for c in range(len(puzzle)):
-                if (puzzle[r][c] == 0):
+            for c in range(len(puzzle[r])):
+                if (puzzle[r][c].value == 0):
                     return r,c
                 
         return -1,-1
     
-    def check_valid_entry(self, puzzle: list[list[int]], size: int, value: str, row: int, col: int) -> int:
+    def check_valid_entry(self, puzzle: list[list[Cell]], size: int, value: int, row: int, col: int) -> int:
         """
         Check value is a valid option for cell.
         """
 
         # check row
-        if any(puzzle[row][c] == value for c in range(size)):
+        if any(puzzle[row][c].value == value for c in range(size)):
             return False
 
         # check column
-        if any(puzzle[r][col] == value for r in range(size)):
+        if any(puzzle[r][col].value == value for r in range(size)):
             return False
 
         # check box
-        box_size = int(self.size ** 0.5)
+        box_size = int(len(puzzle) ** 0.5)
         r_corner = (row // box_size) * box_size
         c_corner = (col // box_size) * box_size
         for x in range(r_corner, r_corner + box_size):
             for y in range(c_corner, c_corner + box_size):
-                if puzzle[x][y] == value:
+                if puzzle[x][y].value == value:
                     return False
         
         return True
@@ -42,34 +45,40 @@ class Strategy(ABC):
 
 class RecursiveSolver(Strategy):
     def solve(self, sudoku: Sudoku, r: int = 0, c: int = 0) -> bool:
+        """
+        Basic backtracking recursive solver algorithm.
+        """
         r, c = self.find_empty(sudoku.puzzle)
         if r == -1:
             return True
         
         for value in range(1, 10):
             if self.check_valid_entry(sudoku.puzzle, sudoku.size, value, r, c):
-                sudoku.puzzle[r][c] = value
+                sudoku.puzzle[r][c].value = value
                 if self.solve(sudoku, r, c):
                     return True
                 
-                sudoku.puzzle[r][c] = 0
+                sudoku.puzzle[r][c].value = 0
 
         return False
 
 class ImprovedRecursiveSolver(Strategy):
     def solve(self, sudoku: Sudoku, r: int = 0, c: int = 0) -> bool:
+        """
+        Improved recursive solver. Uses cell valid entries to reduce the number of options to try at each empty cell.
+        """
         r, c = self.find_empty(sudoku.puzzle)
         if r == -1:
             return True
         
-        values = sudoku.cell_options[r][c].valid_nums
+        values = sudoku.puzzle[r][c].valid_nums
         for value in values:
             if self.check_valid_entry(sudoku.puzzle, sudoku.size, value, r, c):
-                sudoku.puzzle[r][c] = value
+                sudoku.puzzle[r][c].value = value
                 if self.solve(sudoku, r, c):
                     return True
                 
-                sudoku.puzzle[r][c] = 0
+                sudoku.puzzle[r][c].value = 0
         
         return False
 
@@ -83,18 +92,18 @@ class PersonalSolver(Strategy):
         for r in range(sudoku.size):
             for c in range(sudoku.size):
                 # only update valid_nums if the cell is empty
-                if sudoku.puzzle[r][c] != 0:
+                if sudoku.puzzle[r][c].value != 0:
                     continue
 
-                options = sudoku.cell_options[r][c]
-                valid = [num for num in options.valid_nums if self.check_valid_entry(sudoku.puzzle, sudoku.size, num, r, c)]
+                valid_nums = sudoku.puzzle[r][c].valid_nums
+                valid = [num for num in valid_nums if self.check_valid_entry(sudoku.puzzle, sudoku.size, num, r, c)]
                 
                 # only one valid option so add into puzzle
                 if len(valid) == 1: 
-                    sudoku.puzzle[r][c] = valid[0]
+                    sudoku.puzzle[r][c].value = valid[0]
                     sudoku.remove_element_valid_nums(r, c, valid[0])
 
-                options.valid_nums = valid
+                sudoku.puzzle[r][c].valid_nums = valid
     
     def row_solve_entries(self, sudoku: Sudoku, row_index: int) -> None:
         counter = Counter()
@@ -102,8 +111,8 @@ class PersonalSolver(Strategy):
 
         # collect all possible entries for empty cells in the row
         for c in range(sudoku.size):
-            if sudoku.puzzle[row_index][c] == 0:
-                valid_nums = sudoku.cell_options[row_index][c].valid_nums
+            if sudoku.puzzle[row_index][c].value == 0:
+                valid_nums = sudoku.puzzle[row_index][c].valid_nums
                 counter.update(valid_nums)
                 history[c] = valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
         
@@ -117,7 +126,7 @@ class PersonalSolver(Strategy):
             unique_nums = single_entries & set(valid_nums)
             if unique_nums:
                 num = unique_nums.pop()
-                sudoku.puzzle[row_index][col] = num
+                sudoku.puzzle[row_index][col].value = num
                 sudoku.remove_element_valid_nums(row_index, col, num)
                 single_entries.remove(num)
 
@@ -130,8 +139,8 @@ class PersonalSolver(Strategy):
         
         # iterate along the row
         for r in range(sudoku.size):
-            if sudoku.puzzle[r][col_index] == 0:
-                valid_nums = sudoku.cell_options[r][col_index].valid_nums
+            if sudoku.puzzle[r][col_index].value == 0:
+                valid_nums = sudoku.puzzle[r][col_index].valid_nums
                 counter.update(valid_nums)
                 history[r] = valid_nums # keep a history of valid_nums and associated column index to avoid another loop later
         
@@ -145,7 +154,7 @@ class PersonalSolver(Strategy):
             unique_nums = single_entries & set(valid_nums)
             if unique_nums:
                 num = unique_nums.pop()
-                sudoku.puzzle[row][col_index] = num
+                sudoku.puzzle[row][col_index].value = num
                 sudoku.remove_element_valid_nums(row, col_index, num)
                 single_entries.remove(num)
 
@@ -161,9 +170,9 @@ class PersonalSolver(Strategy):
             for c in range(3):
                 row = r_corner + r
                 col = c_corner + c
-                if sudoku.puzzle[row][col] != 0:
+                if sudoku.puzzle[row][col].value != 0:
                     continue
-                valid_nums = sudoku.cell_options[row][col].valid_nums
+                valid_nums = sudoku.puzzle[row][col].valid_nums
                 counter.update(valid_nums)
                 history[(row, col)] = valid_nums
         
@@ -177,7 +186,7 @@ class PersonalSolver(Strategy):
             unique_nums = single_entries & set(valid_nums)
             if unique_nums:
                 num = unique_nums.pop()
-                sudoku.puzzle[cell_coords[0]][cell_coords[1]] = num
+                sudoku.puzzle[cell_coords[0]][cell_coords[1]].value = num
                 sudoku.remove_element_valid_nums(cell_coords[0], cell_coords[1], num)
                 self.update_valid_entries(sudoku)
                 single_entries.remove(num)

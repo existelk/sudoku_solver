@@ -85,7 +85,7 @@ class SudokuSolver:
                 if c in [3, 6]:
                     output_str += "|"
 
-                output = puzzle[r][c]
+                output = puzzle[r][c].value
                 if output == 0:
                     output = "-"
                 output_str += f" {output} "
