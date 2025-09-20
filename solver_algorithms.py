@@ -3,8 +3,6 @@ from collections import Counter, defaultdict
 
 from sudoku_elements import Sudoku
 
-CHUNK_SIZE = 3
-
 class Strategy(ABC):
     def find_empty(self, puzzle: list[list[int]]) -> tuple[int, int]:
         for r in range(len(puzzle)):
@@ -28,7 +26,7 @@ class Strategy(ABC):
             return False
 
         # check box
-        box_size = CHUNK_SIZE
+        box_size = int(self.size ** 0.5)
         r_corner = (row // box_size) * box_size
         c_corner = (col // box_size) * box_size
         for x in range(r_corner, r_corner + box_size):
