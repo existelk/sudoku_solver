@@ -3,7 +3,6 @@ import os
 from solver_algorithms import *
 from sudoku_elements import Sudoku
 
-
 class SudokuSolver:
     def __init__(self, filename: str, strategy: Strategy, start: float = None, end: float = None):
         self._unsolved_puzzle = self.read_puzzle_file(filename)
@@ -14,14 +13,25 @@ class SudokuSolver:
         self.sudoku = Sudoku(self._unsolved_puzzle)
 
     def read_puzzle_file(self, puzzle_file: str) -> list[list[int]]:
+        """
+        Reads a Sudoku puzzle from a file, expecting each line to contain comma-separated integers.
+        Empty lines are skipped, and non-digit values are treated as zeros.
+        """
+
         if not os.path.isfile(puzzle_file):
             raise FileNotFoundError(f"File not found. Check file is in the expected location: {puzzle_file}")
 
         puzzle = []
-        with open(puzzle_file) as f:
+        with open(puzzle_file, encoding="utf-8") as f:
             for line in f:
                 format_line = line.rstrip().split(',')
-                puzzle.append([int(format_line[i]) for i in range(len(format_line))])
+                if not any(format_line):
+                    continue
+                
+                try:
+                    puzzle.append([int(val) if val.strip().isdigit() else 0 for val in format_line])
+                except ValueError:
+                    raise ValueError(f"Malformed line in puzzle file: {line.strip()}")
         
         return puzzle
     
@@ -75,7 +85,7 @@ class SudokuSolver:
                 if c in [3, 6]:
                     output_str += "|"
 
-                output = puzzle[r][c]
+                output = puzzle[r][c].value
                 if output == 0:
                     output = "-"
                 output_str += f" {output} "
